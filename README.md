@@ -75,6 +75,7 @@ java -cp bin src.Main
 ## Sample Output
 
 ```
+n,elapsed_s,total_distance,late_violations
 200,0.48,184.2,0
 500,1.10,460.8,0
 1000,2.45,910.3,0
