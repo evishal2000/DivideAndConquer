@@ -31,6 +31,7 @@ To overcome this, a **Divide and Conquer** strategy decomposes the problem into 
 
 ## Project Structure
 
+```
 DivideAndConquer/
 │
 ├── src/
@@ -56,8 +57,7 @@ DivideAndConquer/
 │
 ├── README.md # Project documentation (this file)
 └── results_template.csv # Optional: Example output structure for visualization
-
----
+```
 
 ## Build Instructions
 
@@ -72,10 +72,12 @@ javac -d bin src/*.java
 java -cp bin src.Main
 ```
 
-## Build Instructions
+## Sample Output
 
+```
 200,0.48,184.2,0
 500,1.10,460.8,0
 1000,2.45,910.3,0
 3000,8.20,2745.9,0
 5000,22.70,4523.4,0
+```
