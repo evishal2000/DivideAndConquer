@@ -4,17 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Generates simple synthetic VRPTW instances.
- *
- * Strategy:
- * - Customers uniformly in [0,1]^2
- * - Depot at (0.5, 0.5)
- * - service times ~ normal(serviceMean, serviceStd) clipped at 0
- * - earliest a uniformly in [0, horizon/2], latest b = a + slack
- *
- * Save as DivideAndConquer/InstanceGenerator.java
- */
 public final class InstanceGenerator {
 
     private InstanceGenerator() {
@@ -40,4 +29,9 @@ public final class InstanceGenerator {
 
         return new Instance(depot, customers, horizon);
     }
+
+    public static Instance generate(int n, double horizon, long seed) {
+        return generate(n, 1.0, 1.0, horizon, seed);
+    }
+
 }

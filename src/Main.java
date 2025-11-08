@@ -2,69 +2,53 @@ package src;
 
 import java.util.List;
 
-/**
- * Demo application using default-package simple structure.
- *
- * Save as DivideAndConquer/Main.java
- *
- * Compile:
- * javac DivideAndConquer/*.java
- *
- * Run:
- * java -cp . Main 500 32
- */
-public class Main {
+public final class Main {
 
     public static void main(String[] args) {
-        int nCustomers = 500;
-        int kMax = 32;
-        long seed = 42L;
+        int[] sizes = new int[] { 200, 500, 1000 };
+        int trials = 3;
+        int kMax = 40;
+        int passes = 2;
 
-        if (args.length >= 1) {
-            nCustomers = Integer.parseInt(args[0]);
-        }
-        if (args.length >= 2) {
-            kMax = Integer.parseInt(args[1]);
-        }
-        if (args.length >= 3) {
-            seed = Long.parseLong(args[2]);
-        }
+        long allStart = System.nanoTime();
+        try {
+            System.out.println("n,elapsed_s,total_distance,late_violations");
 
-        System.out.printf("Generating instance with n=%d, kMax=%d, seed=%d%n", nCustomers, kMax, seed);
-        Instance inst = InstanceGenerator.generate(nCustomers, 10.0, 0.05, 0.02, seed);
+            for (int n : sizes) {
+                for (int t = 0; t < trials; t++) {
 
-        System.out.println("Depot: " + inst.getDepot());
+                    Instance inst = InstanceGenerator.generate(n, /* horizon */ 200.0, /* seed */ 42 + t);
 
-        List<Customer> customers = inst.getCustomers();
-        System.out.println("Total customers generated: " + customers.size());
+                    long t0 = System.nanoTime();
+                    List<Route> routes = DCSolver.solve(inst, kMax, passes);
+                    double elapsed = (System.nanoTime() - t0) / 1e9;
 
-        long t0 = System.currentTimeMillis();
-        List<List<Customer>> clusters = Partitioner.recursivePartition(customers, kMax);
-        long t1 = System.currentTimeMillis();
+                    double dist = RouteCost.totalDistance(routes, inst);
+                    int late = countViolations(routes, inst);
 
-        System.out.printf("Partitioned into %d clusters in %.3f s%n", clusters.size(), (t1 - t0) / 1000.0);
-        int idx = 0;
-        for (List<Customer> cl : clusters) {
-            System.out.printf("Cluster %d: size=%d, bbox=%s%n", idx++, cl.size(), bboxString(cl));
-            for (int i = 0; i < Math.min(3, cl.size()); i++) {
-                System.out.println("  " + cl.get(i));
+                    System.out.printf("%d,%.3f,%.3f,%d%n", n, elapsed, dist, late);
+
+                }
             }
+
+            long allEnd = System.nanoTime();
+            double totalSec = (allEnd - allStart) / 1e9;
+            System.out.printf("DONE: all runs completed in %.3f s%n", totalSec);
+        } finally {
+            // ensure the final line is flushed and the JVM exits
+            System.out.flush();
+            System.err.flush();
+            System.exit(0);
         }
     }
 
-    private static String bboxString(List<Customer> cl) {
-        double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
-        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
-        for (Customer c : cl) {
-            if (c.getX() < minX)
-                minX = c.getX();
-            if (c.getX() > maxX)
-                maxX = c.getX();
-            if (c.getY() < minY)
-                minY = c.getY();
-            if (c.getY() > maxY)
-                maxY = c.getY();
+    private static int countViolations(List<Route> routes, Instance inst) {
+        int v = 0;
+        var idMap = RouteCost.idIndex(inst);
+        for (Route r : routes) {
+            if (!VRPTWFeasibility.feasible(r, inst, idMap))
+                v++;
         }
-        return String.format("[%.3f,%.3f] x [%.3f,%.3f]", minX, minY, maxX, maxY);
+        return v;
     }
 }

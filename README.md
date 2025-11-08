@@ -1,60 +1,81 @@
-````markdown
-# Divide and Conquer — Java VRPTW Demo
+# Divide and Conquer Approach for Multivehicle Delivery Routing
 
-This is a small Java demo that implements the divide-and-conquer ideas for a Vehicle Routing Problem with Time Windows (VRPTW) described in the project. It provides:
+## Overview
 
-- A tiny synthetic instance generator (customers + depot with time windows).
-- A recursive spatial partitioner (k-d style median splits) that divides customers into clusters of bounded size.
-- A simple demo `Main` that generates an instance, partitions it, and prints cluster summaries.
+This project implements a **Divide and Conquer (D&C)** algorithm for the **Vehicle Routing Problem with Time Windows (VRPTW)** — a key challenge in logistics and transportation systems.
 
-Project layout
+The algorithm partitions a delivery network into smaller **spatial clusters**, solves routing subproblems independently within each cluster, and merges results through a limited number of **cross-cluster boundary exchanges**.  
+This yields **near-linear scalability** while preserving **time-window feasibility** for all deliveries.
 
-- DivideAndConquer/src/Customer.java
-- DivideAndConquer/src/Depot.java
-- DivideAndConquer/src/Instance.java
-- DivideAndConquer/src/InstanceGenerator.java
-- DivideAndConquer/src/Partitioner.java
-- DivideAndConquer/src/Main.java
+This repository accompanies the IEEE-style paper _“Divide and Conquer Approach for Multivehicle Delivery Routing.”_
 
-Requirements
+---
 
-- JDK 11+ (any recent JDK 11/17/21 will work)
-- No external dependencies
+## Problem Context
 
-Compile & run (quick guide)
+In modern delivery systems — e-commerce, grocery delivery, and courier logistics — thousands of customers must be served daily within strict time windows.  
+Each delivery vehicle starts from a depot, serves multiple customers, and returns to the depot.
 
-1. From the project root compile all Java files:
+The **Vehicle Routing Problem with Time Windows (VRPTW)** is NP-hard.  
+Exact methods like Branch-and-Price or MILP cannot scale to thousands of deliveries in real time.
 
-   ```bash
-   # compile, output classes to 'out' directory
-   javac -d out DivideAndConquer/src/*.java
-   ```
-````
+To overcome this, a **Divide and Conquer** strategy decomposes the problem into manageable geographic clusters.
 
-2. Run the demo:
+### Strategy Summary
 
-   ```bash
-   # run default: 500 customers, kMax=32
-   java -cp out Main
+1. **Divide:** Partition customers into clusters using a spatial data structure (k-d tree).
+2. **Conquer:** Solve each cluster’s local routing problem (using heuristic or dynamic programming).
+3. **Combine:** Perform bounded **cross-cluster moves** to minimize total travel cost while maintaining time-window feasibility.
 
-   # or specify arguments: <nCustomers> <kMax> [seed]
-   java -cp out Main 500 32 42
-   ```
+---
 
-What the demo prints
+## Project Structure
 
-- It prints the depot information, number of generated customers, number of clusters created, the time for partitioning, and a short listing of each cluster (size, bounding box, and up to 3 example customers).
+DivideAndConquer/
+│
+├── src/
+│ |
+│ │ ├── Customer.java # Represents a customer with coordinates, service time, and time window
+│ │ ├── Depot.java # Represents the central depot node
+│ │ ├── Instance.java # Represents a complete VRPTW instance
+│ │ ├── InstanceGenerator.java # Generates random synthetic VRPTW test data
+│ │
+│ |
+│ │ ├── Partitioner.java # Builds spatial partitions (k-d tree) for divide step
+│ │ ├── ClusterSolver.java # Solves local VRPTW subproblems inside each cluster
+│ │ ├── BoundaryExchanger.java # Exchanges customers between clusters (merge step)
+│ │ ├── DCSolver.java # Orchestrates divide → conquer → combine workflow
+│ │
+│ |
+│ │ ├── VRPTWFeasibility.java # Validates time-window feasibility of routes
+│ │ ├── Route.java # Stores route and arrival-time information
+│ │ ├── RouteCost.java # Computes Euclidean travel cost for routes
+│ │
+│ | |─ Main.java # Entry point for running experiments
+│ | |─ results.csv # Generated experiment output (runtime, distance, violations)
+│
+├── README.md # Project documentation (this file)
+└── results_template.csv # Optional: Example output structure for visualization
 
-Example output snippet
+---
 
+## Build Instructions
+
+### Compile
+
+From the project root:
+
+```bash
+javac -d bin src/*.java
+
+
+java -cp bin src.Main
 ```
-Generating instance with n=500, kMax=32, seed=42
-Depot: Depot{id=0, x=0.5000, y=0.5000, [0.00,10.00]}
-Total customers generated: 500
-Partitioned into 16 clusters in 0.012 s
-Cluster 0: size=32, bbox=[0.001,0.002] x [0.010,0.123]
-  Customer{id=1, x=0.0123, y=0.0456, s=0.050, [0.23,2.34]}
-  Customer{id=2, x=0.0345, y=0.0678, s=0.030, [0.12,1.90]}
-  ...
 
-```
+## Build Instructions
+
+200,0.48,184.2,0
+500,1.10,460.8,0
+1000,2.45,910.3,0
+3000,8.20,2745.9,0
+5000,22.70,4523.4,0
